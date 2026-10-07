@@ -1,0 +1,47 @@
+# Environment — every .env variant holds real secrets; only the template is tracked.
+.env
+.env.*
+*.env.local
+!.env.example
+
+# Disabled / local compose overrides
+docker-compose.override.yml.disabled
+*.disabled
+
+# Build artefacts
+*.exe
+backend/server
+backend/bin/
+
+
+# Go
+backend/tmp/
+backend/vendor/
+
+# CRY-10 backtest output — per-run markdown / JSON / CSV reports.
+# Treated as build artefacts, not source. Each run overwrites the day's
+# file; checking them in would balloon the repo with timestamped noise.
+backtest_results/
+backend/backtest_results/
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/tsconfig.tsbuildinfo
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

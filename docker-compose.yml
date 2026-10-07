@@ -1,0 +1,115 @@
+services:
+  # ── Ollama (Local LLM) ───────────────────────────────────
+  # GPU support: uncomment the 'deploy' block below if you
+  # have an NVIDIA GPU with the nvidia-container-toolkit installed.
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      # Host ports bind to BIND_ADDR (default 127.0.0.1) so the stack is not
+      # reachable from the LAN unless the operator opts in.
+      # OLLAMA_PORT only changes the host side (e.g. when a native Ollama
+      # already owns 11434); the backend always reaches ollama:11434.
+      - "${BIND_ADDR:-127.0.0.1}:${OLLAMA_PORT:-11434}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ── Postgres (TimescaleDB) ───────────────────────────────
+  # Local dev default. To use a managed DB instead (Neon, RDS, etc.),
+  # point `POSTGRES_HOST` at it in `.env` AND `docker compose stop postgres`
+  # — otherwise the local service init-loads with the override creds and
+  # wastes a `postgres_data` volume that the backend never queries.
+  # TimescaleDB image (not vanilla Postgres) keeps dev runtime behaviour
+  # close to the production-shaped hypertable schema produced by
+  # `cmd/migrate-schema`.
+  #
+  # GORM AutoMigrate runs at backend boot (internal/database/database.go),
+  # so first `docker compose up` after `down -v` creates all tables from
+  # scratch. The healthcheck below gates the backend's `depends_on` so
+  # AutoMigrate never races the postmaster startup.
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cryptobot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme_strong_password}
+      POSTGRES_DB: ${POSTGRES_DB:-cryptobot}
+    ports:
+      # Bound to 127.0.0.1 so an external dev tool (psql, DBeaver) can
+      # connect without exposing the DB on the LAN.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cryptobot} -d ${POSTGRES_DB:-cryptobot}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+
+  # ── Go Backend ────────────────────────────────────────────
+  # Reads POSTGRES_HOST / POSTGRES_PORT / POSTGRES_USER / POSTGRES_PASSWORD /
+  # POSTGRES_DB / POSTGRES_SSLMODE from `.env` (see `.env.example`). The
+  # default `.env.example` points at the local `postgres` service above;
+  # to use Neon (or another managed DB) override POSTGRES_HOST and set
+  # POSTGRES_SSLMODE=require.
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      # BACKEND_PORT is the single source of truth: it drives the host
+      # mapping, the container listener (cfg.BackendPort → ListenAndServe),
+      # and the FE NEXT_PUBLIC_API_URL/WS_URL defaults below. Keep both
+      # sides of the mapping bound to the same value to avoid host/container
+      # desync.
+      - "${BIND_ADDR:-127.0.0.1}:${BACKEND_PORT:-8081}:${BACKEND_PORT:-8081}"
+      # pprof debug surface — only active when ENABLE_PPROF=true in .env.
+      # Mapping is unconditional so toggling the env var doesn't require
+      # a compose edit; the host port is harmless when the container
+      # isn't listening on it. Bound to 127.0.0.1 so it never leaves the host.
+      - "127.0.0.1:6060:6060"
+    env_file:
+      - .env
+    environment:
+      # Only OLLAMA_HOST needs an in-compose override (service-name DNS).
+      # Postgres connection vars are owned by .env / .env override files.
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
+  # ── Next.js Frontend ─────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # NEXT_PUBLIC_* are inlined into the browser bundle at build time,
+      # so they must be build args — runtime env cannot change them.
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8081}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:8081/ws}
+        NEXT_PUBLIC_EXECUTION_MODE: ${NEXT_PUBLIC_EXECUTION_MODE:-dry-run}
+    restart: unless-stopped
+    ports:
+      - "${BIND_ADDR:-127.0.0.1}:${FRONTEND_PORT:-3002}:${FRONTEND_PORT:-3002}"
+    environment:
+      # Next.js standalone server respects PORT — keeps the container
+      # listener aligned with the host mapping above.
+      PORT: ${FRONTEND_PORT:-3002}
+    depends_on:
+      - backend
+
+volumes:
+  ollama_data:
+  postgres_data:

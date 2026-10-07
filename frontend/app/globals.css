@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ── Light Theme ───────────────────────────────────── */
+  :root {
+    --background: 0 0% 98%;
+    --foreground: 224 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 20% 14%;
+
+    --primary: 152 82% 38%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 14% 94%;
+    --secondary-foreground: 224 20% 22%;
+
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 10% 46%;
+
+    --accent: 220 14% 94%;
+    --accent-foreground: 224 20% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 90%;
+    --input: 220 13% 90%;
+    --ring: 152 82% 38%;
+
+    --radius: 0.75rem;
+
+    /* Semantic */
+    --profit: 152 82% 42%;
+    --loss: 0 72% 51%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 55%;
+
+    /* Overlay tokens — adapt per theme */
+    --overlay-2: 220 20% 92%;
+    --overlay-3: 220 20% 90%;
+    --overlay-4: 220 18% 88%;
+    --overlay-6: 220 16% 86%;
+    --overlay-8: 220 14% 84%;
+
+    /* Chart structural */
+    --chart-grid: 220 13% 92%;
+    --chart-axis-text: 220 10% 46%;
+    --chart-axis-line: 220 13% 88%;
+    --chart-tooltip-bg: 0 0% 100%;
+    --chart-tooltip-border: 220 13% 90%;
+    --chart-cursor: 220 10% 76%;
+    --chart-subtle-line: 220 13% 92%;
+
+    /* Chart indicators */
+    --chart-up: 142 76% 36%;
+    --chart-down: 0 72% 51%;
+    --chart-up-candle: 142 76% 30%;
+    --chart-down-candle: 0 72% 45%;
+    --chart-line: 45 93% 47%;
+    --chart-ema20: 217 91% 50%;
+    --chart-ema50: 263 70% 45%;
+    --chart-rsi: 292 84% 50%;
+  }
+
+  /* ── Dark Theme ────────────────────────────────────── */
+  .dark {
+    --background: 225 30% 4%;
+    --foreground: 210 40% 96%;
+
+    --card: 225 25% 7%;
+    --card-foreground: 210 40% 96%;
+
+    --primary: 152 82% 45%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 25% 12%;
+    --secondary-foreground: 210 40% 90%;
+
+    --muted: 220 20% 14%;
+    --muted-foreground: 215 18% 50%;
+
+    --accent: 220 25% 14%;
+    --accent-foreground: 210 40% 96%;
+
+    --destructive: 0 80% 58%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 20% 12%;
+    --input: 220 20% 14%;
+    --ring: 152 82% 45%;
+
+    /* Semantic */
+    --profit: 152 82% 50%;
+    --loss: 0 80% 58%;
+    --warning: 45 93% 58%;
+    --info: 217 91% 60%;
+
+    /* Overlay tokens */
+    --overlay-2: 220 20% 10%;
+    --overlay-3: 220 20% 12%;
+    --overlay-4: 220 18% 14%;
+    --overlay-6: 220 16% 16%;
+    --overlay-8: 220 14% 18%;
+
+    /* Chart structural */
+    --chart-grid: 220 15% 10%;
+    --chart-axis-text: 215 15% 40%;
+    --chart-axis-line: 220 15% 12%;
+    --chart-tooltip-bg: 225 30% 5%;
+    --chart-tooltip-border: 220 15% 15%;
+    --chart-cursor: 220 15% 25%;
+    --chart-subtle-line: 220 15% 12%;
+
+    /* Chart indicators */
+    --chart-up: 142 71% 45%;
+    --chart-down: 0 84% 60%;
+    --chart-up-candle: 142 76% 36%;
+    --chart-down-candle: 0 72% 51%;
+    --chart-line: 48 96% 53%;
+    --chart-ema20: 217 91% 60%;
+    --chart-ema50: 263 70% 50%;
+    --chart-rsi: 292 84% 61%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  /* ── Premium scrollbar ───────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--overlay-6));
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--overlay-8));
+  }
+
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--overlay-6)) transparent;
+  }
+}
+
+@layer components {
+  /* ── Number styling ──────────────────────────────── */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+}
+
+@layer utilities {
+  /* ── Dot pulse animation ─────────────────────────── */
+  .dot-pulse {
+    animation: dot-pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dot-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+}
